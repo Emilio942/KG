@@ -1,0 +1,43 @@
+{
+  "security_controls": {
+    "access_controls": {
+      "multi_factor_authentication": true,
+      "privileged_access_management": true,
+      "regular_access_reviews": true,
+      "principle_of_least_privilege": true
+    },
+    "system_operations": {
+      "change_management": true,
+      "incident_response": true,
+      "vulnerability_management": true,
+      "backup_and_recovery": true
+    },
+    "logical_access": {
+      "user_authentication": true,
+      "authorization": true,
+      "accounting_logging": true
+    },
+    "network_security": {
+      "network_segmentation": true,
+      "encryption_in_transit": true,
+      "intrusion_detection": true
+    },
+    "data_protection": {
+      "encryption_at_rest": true,
+      "data_classification": true,
+      "data_retention": true,
+      "secure_disposal": true
+    }
+  },
+  "availability_controls": {
+    "environmental_safeguards": true,
+    "processing_integrity": true,
+    "system_monitoring": true,
+    "capacity_planning": true
+  },
+  "confidentiality_controls": {
+    "data_encryption": true,
+    "secure_communications": true,
+    "confidentiality_agreements": true
+  }
+}

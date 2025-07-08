@@ -1,0 +1,30 @@
+{
+  "success": false,
+  "roi": {
+    "total_cycles": 12,
+    "successful_cycles": 0,
+    "success_rate": 0.0,
+    "avg_duration_seconds": 0.8035143613815308,
+    "total_cost_usd": 0.008035143613815307,
+    "avg_business_value": 0.0,
+    "time_saved_hours": -0.0026783812046051025,
+    "manual_cost_usd": 0.0,
+    "cost_savings_usd": -0.008035143613815307,
+    "roi_percentage": -80.35143613815308,
+    "cost_per_successful_cycle": 0.008035143613815307
+  },
+  "metrics": [
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161519_458', start_time=1751984119.7477388, end_time=1751984120.5499043, duration_seconds=0.8021655082702637, success=False, cost_estimate=0.0006684712568918865, hypotheses_generated=1, simulations_run=1, memory_used_mb=0.125, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161520_228', start_time=1751984120.5584445, end_time=1751984121.362836, duration_seconds=0.8043913841247559, success=False, cost_estimate=0.0006703261534372966, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161521_140', start_time=1751984121.37426, end_time=1751984122.1774504, duration_seconds=0.8031904697418213, success=False, cost_estimate=0.0006693253914515178, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161522_458', start_time=1751984122.1856968, end_time=1751984122.9885392, duration_seconds=0.802842378616333, success=False, cost_estimate=0.0006690353155136109, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161522_228', start_time=1751984122.9983811, end_time=1751984123.801547, duration_seconds=0.8031659126281738, success=False, cost_estimate=0.0006693049271901449, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161523_140', start_time=1751984123.8116934, end_time=1751984124.6155968, duration_seconds=0.803903341293335, success=False, cost_estimate=0.0006699194510777791, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161524_458', start_time=1751984124.6280215, end_time=1751984125.431862, duration_seconds=0.8038406372070312, success=False, cost_estimate=0.0006698671976725261, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161525_228', start_time=1751984125.4414942, end_time=1751984126.245604, duration_seconds=0.8041098117828369, success=False, cost_estimate=0.0006700915098190308, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161526_140', start_time=1751984126.2557745, end_time=1751984127.058951, duration_seconds=0.8031764030456543, success=False, cost_estimate=0.000669313669204712, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161527_458', start_time=1751984127.0683253, end_time=1751984127.8719451, duration_seconds=0.8036198616027832, success=False, cost_estimate=0.0006696832180023193, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161527_228', start_time=1751984127.882915, end_time=1751984128.6866634, duration_seconds=0.803748369216919, success=False, cost_estimate=0.0006697903076807658, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")",
+    "BusinessMetrics(cycle_id='OPT_CYCLE_20250708_161528_140', start_time=1751984128.697601, end_time=1751984129.5016193, duration_seconds=0.8040182590484619, success=False, cost_estimate=0.0006700152158737182, hypotheses_generated=1, simulations_run=1, memory_used_mb=0, cpu_percent=0.0, business_value_score=0.0, error_details=\"Exception: 'LernAnpassungsRegulator' object has no attribute 'process_task'\")"
+  ]
+}

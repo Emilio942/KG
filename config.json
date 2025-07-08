@@ -1,0 +1,36 @@
+{
+  "timeouts": {
+    "HG_total": 300,
+    "HG_vae_generation": 60,
+    "ISV_total": 7200,
+    "ISV_mdSim_classic": 3600,
+    "ISV_mdSim_neural": 180,
+    "ISV_aroma_prediction": 300,
+    "KD_analysis": 180,
+    "LAR_update": 60
+  },
+  "resources": {
+    "ISV_parallelSims_classic": 3,
+    "ISV_parallelSims_neural": 10,
+    "maxMemoryMB": 8192,
+    "maxGPUSlots": 2,
+    "maxCPUCores": 8,
+    "diskSpaceGB": 100
+  },
+  "system": {
+    "maxParallelCycles": 5,
+    "logLevel": "INFO",
+    "enableDetailedLogging": true
+  },
+  "database": {
+    "knowledge_graph_db": "kg_database.db",
+    "redis_host": "localhost",
+    "redis_port": 6379
+  },
+  "models": {
+    "vae_model_path": "models/vae_model.pkl",
+    "neural_md_model_path": "models/neural_md_model.pkl",
+    "aroma_model_path": "models/aroma_model.pkl",
+    "texture_model_path": "models/texture_model.pkl"
+  }
+}

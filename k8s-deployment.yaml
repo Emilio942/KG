@@ -1,0 +1,512 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kg-system
+  labels:
+    name: kg-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kg-config
+  namespace: kg-system
+data:
+  config.json: |
+    {
+      "database_url": "postgresql://kg_user:kg_password@postgres-service:5432/kg_system",
+      "redis_url": "redis://redis-service:6379",
+      "environment": "production",
+      "logging_level": "INFO",
+      "auth": {
+        "secret_key": "your-secret-key-here"
+      },
+      "ml_models": {
+        "vae_model_path": "/app/models/vae_model.pkl",
+        "backup_model_path": "/app/models/backup_model.pkl"
+      },
+      "monitoring": {
+        "prometheus_enabled": true,
+        "metrics_port": 8001,
+        "health_check_interval": 30
+      }
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kg-secrets
+  namespace: kg-system
+type: Opaque
+stringData:
+  postgres-password: kg_password
+  redis-password: ""
+  jwt-secret: your-jwt-secret-here
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: kg-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: models-pvc
+  namespace: kg-system
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: kg-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: kg_system
+        - name: POSTGRES_USER
+          value: kg_user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kg-secrets
+              key: postgres-password
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-sql
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: init-sql
+        configMap:
+          name: init-sql-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: kg-system
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: kg-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "125m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: kg-system
+spec:
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kg-api
+  namespace: kg-system
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kg-api
+  template:
+    metadata:
+      labels:
+        app: kg-api
+    spec:
+      containers:
+      - name: kg-api
+        image: kg-system:latest
+        ports:
+        - containerPort: 8000
+        - containerPort: 8001
+        env:
+        - name: CONFIG_PATH
+          value: /app/config/config.json
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        - name: models-volume
+          mountPath: /app/models
+        - name: logs-volume
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: kg-config
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: models-pvc
+      - name: logs-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kg-api-service
+  namespace: kg-system
+spec:
+  selector:
+    app: kg-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+    - name: metrics
+      protocol: TCP
+      port: 8001
+      targetPort: 8001
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kg-api-ingress
+  namespace: kg-system
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: kg-system.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kg-api-service
+            port:
+              number: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: kg-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        - name: prometheus-storage
+          mountPath: /prometheus
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: kg-system
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: kg-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: admin
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "125m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+      volumes:
+      - name: grafana-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: kg-system
+spec:
+  selector:
+    app: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kg-api-hpa
+  namespace: kg-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kg-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kg-api-pdb
+  namespace: kg-system
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: kg-api
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-sql-config
+  namespace: kg-system
+data:
+  init.sql: |
+    -- Initialize KG-System database
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+    -- Create tables for KG-System
+    CREATE TABLE IF NOT EXISTS hypotheses (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        content TEXT NOT NULL,
+        confidence FLOAT NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(50) DEFAULT 'pending',
+        metadata JSONB DEFAULT '{}'
+    );
+    
+    CREATE TABLE IF NOT EXISTS validations (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        hypothesis_id UUID REFERENCES hypotheses(id),
+        validation_type VARCHAR(50) NOT NULL,
+        result JSONB NOT NULL,
+        confidence FLOAT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        validation_metadata JSONB DEFAULT '{}'
+    );
+    
+    CREATE TABLE IF NOT EXISTS knowledge_entries (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        hypothesis_id UUID REFERENCES hypotheses(id),
+        content TEXT NOT NULL,
+        knowledge_type VARCHAR(50) NOT NULL,
+        relevance_score FLOAT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        metadata JSONB DEFAULT '{}'
+    );
+    
+    CREATE TABLE IF NOT EXISTS learning_actions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        hypothesis_id UUID REFERENCES hypotheses(id),
+        action_type VARCHAR(50) NOT NULL,
+        parameters JSONB NOT NULL,
+        result JSONB,
+        success BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP,
+        metadata JSONB DEFAULT '{}'
+    );
+    
+    CREATE TABLE IF NOT EXISTS system_metrics (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        metric_name VARCHAR(100) NOT NULL,
+        metric_value FLOAT NOT NULL,
+        metric_type VARCHAR(50) NOT NULL,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        metadata JSONB DEFAULT '{}'
+    );
+    
+    -- Create indexes for performance
+    CREATE INDEX IF NOT EXISTS idx_hypotheses_created_at ON hypotheses(created_at);
+    CREATE INDEX IF NOT EXISTS idx_hypotheses_category ON hypotheses(category);
+    CREATE INDEX IF NOT EXISTS idx_hypotheses_status ON hypotheses(status);
+    CREATE INDEX IF NOT EXISTS idx_validations_hypothesis_id ON validations(hypothesis_id);
+    CREATE INDEX IF NOT EXISTS idx_knowledge_entries_hypothesis_id ON knowledge_entries(hypothesis_id);
+    CREATE INDEX IF NOT EXISTS idx_learning_actions_hypothesis_id ON learning_actions(hypothesis_id);
+    CREATE INDEX IF NOT EXISTS idx_system_metrics_metric_name ON system_metrics(metric_name);
+    CREATE INDEX IF NOT EXISTS idx_system_metrics_timestamp ON system_metrics(timestamp);
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: kg-system
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      
+      - job_name: 'kg-system'
+        static_configs:
+          - targets: ['kg-api-service:8000']
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+      
+      - job_name: 'kg-system-internal'
+        static_configs:
+          - targets: ['kg-api-service:8001']
+        metrics_path: '/internal/metrics'
+        scrape_interval: 10s

@@ -1,0 +1,121 @@
+{
+  "tenant": {
+    "domain": "kg-system-enterprise.auth0.com",
+    "region": "us",
+    "environment_tag": "production",
+    "flags": {
+      "enable_custom_domain": true,
+      "enable_pipeline2": true,
+      "enable_public_signup_user_exists_error": false
+    }
+  },
+  "applications": [
+    {
+      "name": "KG-System Enterprise API",
+      "type": "machine_to_machine",
+      "client_authentication_methods": {
+        "client_secret_post": true,
+        "client_secret_basic": true
+      },
+      "token_endpoint_auth_method": "client_secret_post",
+      "app_type": "machine_to_machine",
+      "grant_types": [
+        "client_credentials"
+      ],
+      "jwt_configuration": {
+        "lifetime_in_seconds": 3600,
+        "scopes": {},
+        "alg": "RS256"
+      }
+    },
+    {
+      "name": "KG-System Enterprise Web App",
+      "type": "spa",
+      "token_endpoint_auth_method": "none",
+      "app_type": "spa",
+      "grant_types": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "callbacks": [
+        "https://app.kg-system.com/callback",
+        "https://dashboard.kg-system.com/callback"
+      ],
+      "allowed_logout_urls": [
+        "https://app.kg-system.com",
+        "https://dashboard.kg-system.com"
+      ],
+      "allowed_origins": [
+        "https://app.kg-system.com",
+        "https://dashboard.kg-system.com"
+      ],
+      "web_origins": [
+        "https://app.kg-system.com",
+        "https://dashboard.kg-system.com"
+      ]
+    }
+  ],
+  "apis": [
+    {
+      "name": "KG-System Enterprise API",
+      "identifier": "https://api.kg-system.com",
+      "signing_alg": "RS256",
+      "scopes": [
+        {
+          "value": "read:hypotheses",
+          "description": "Read hypotheses and results"
+        },
+        {
+          "value": "write:hypotheses",
+          "description": "Create and modify hypotheses"
+        },
+        {
+          "value": "admin:tenant",
+          "description": "Tenant administration access"
+        },
+        {
+          "value": "admin:system",
+          "description": "System administration access"
+        }
+      ],
+      "token_lifetime": 3600,
+      "token_lifetime_for_web": 7200
+    }
+  ],
+  "roles": [
+    {
+      "name": "Researcher",
+      "description": "Standard researcher with hypothesis access",
+      "permissions": [
+        "read:hypotheses",
+        "write:hypotheses"
+      ]
+    },
+    {
+      "name": "Team Lead",
+      "description": "Team lead with advanced access",
+      "permissions": [
+        "read:hypotheses",
+        "write:hypotheses",
+        "admin:tenant"
+      ]
+    },
+    {
+      "name": "System Admin",
+      "description": "Full system administration access",
+      "permissions": [
+        "read:hypotheses",
+        "write:hypotheses",
+        "admin:tenant",
+        "admin:system"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "name": "Add tenant context to JWT",
+      "script": "\nfunction addTenantContext(user, context, callback) {\n  const namespace = 'https://kg-system.com/';\n  \n  // Extract tenant from user metadata or app metadata\n  const tenant = user.app_metadata && user.app_metadata.tenant_id;\n  \n  if (tenant) {\n    context.accessToken[namespace + 'tenant_id'] = tenant;\n    context.accessToken[namespace + 'sweet_spot_mode'] = 'high_performance_enterprise';\n    context.idToken[namespace + 'tenant_id'] = tenant;\n    context.idToken[namespace + 'sweet_spot_mode'] = 'high_performance_enterprise';\n  }\n  \n  callback(null, user, context);\n}\n                    ",
+      "enabled": true
+    }
+  ]
+}
