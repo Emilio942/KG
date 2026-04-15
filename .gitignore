@@ -16,6 +16,7 @@
 .env.test
 .env.production
 .env.staging
+.venv
 
 # AWS credentials and configuration
 .aws/
